@@ -1,13 +1,14 @@
-# Build stage
-FROM maven:3.8.6-openjdk-17 AS builder
+# 🔨 Build stage
+FROM maven:3.8.6-eclipse-temurin-17 AS builder
 WORKDIR /app
 COPY pom.xml mvnw ./
 RUN ./mvnw dependency:go-offline -B
 COPY src src
 RUN ./mvnw package -DskipTests
 
-# Run stage
-FROM openjdk:17-alpine
+# 🚀 Run stage
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
-ENTRYPOINT ["java","-jar","/shrikantmutyala-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 EXPOSE 8080
