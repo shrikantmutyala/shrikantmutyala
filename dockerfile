@@ -1,35 +1,33 @@
-# ┌──────────────────────────────┐
-# │ 1. Build stage               │
-# └──────────────────────────────┘
+# ╔════════════════════════╗
+# ║ 1. Build stage         ║
+# ╚════════════════════════╝
 FROM maven:3.8.6-eclipse-temurin-17 AS builder
 WORKDIR /app
 
-# Copy wrapper and project files in the correct order
+# 1. Copy wrapper and project files
 COPY mvnw ./
 COPY .mvn/ .mvn
 COPY pom.xml ./
 
-# Ensure wrapper is Unix format (fix Windows CRLF line endings) and executable
-RUN apt-get update && apt-get install -y dos2unix \
-    && dos2unix mvnw \
-    && chmod +x mvnw
+# 2. Make mvnw executable (and optionally fix Windows CRLF; requires dos2unix)
+RUN chmod +x mvnw
 
-# Pre-fetch dependencies
+# 3. Pre-fetch dependencies offline
 RUN ./mvnw dependency:go-offline -B
 
-# Copy source and build the application
+# 4. Copy source code and package
 COPY src/ src/
 RUN ./mvnw package -DskipTests
 
-# ┌──────────────────────────────┐
-# │ 2. Run stage                 │
-# └──────────────────────────────┘
-FROM eclipse-temurin:17-jdk-alpine
+# ╔════════════════════════╗
+# ║ 2. Run stage           ║
+# ╚════════════════════════╝
+FROM eclipse-temurin:17-jdk-alpine AS runtime
 WORKDIR /app
 
-# Copy the built JAR (renamed to app.jar) from build stage
+# 5. Copy the final JAR and rename it to app.jar
 COPY --from=builder /app/target/*.jar app.jar
 
-# Run the app
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# 6. Expose port and define entrypoint
 EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
