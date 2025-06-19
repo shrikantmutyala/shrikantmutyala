@@ -1,23 +1,23 @@
-# 📦 1. Build stage
-FROM maven:3.8.6-eclipse-temurin-17 AS builder
+# ┌────────── Build Stage ────────────────────────
+FROM maven:3-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy wrapper and dependencies
-COPY mvnw ./
-COPY .mvn/ .mvn
-COPY pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+# Copy your entire project into the container
+COPY . .
 
-# Copy source code and build
-COPY src/ src/
-RUN ./mvnw package -DskipTests
+# Build the JAR (skip tests for faster deploy)
+RUN mvn clean package -DskipTests
 
-# 🏃 2. Runtime stage
+# ┌────────── Runtime Stage ──────────────────────
 FROM eclipse-temurin:17-jdk-alpine AS runtime
 WORKDIR /app
 
-# Copy the specific jar and rename
-COPY --from=builder /app/target/shrikantmutyala-0.0.1-SNAPSHOT.jar shrikantmutyala.jar
+# Copy the generated jar and rename for simplicity
+COPY --from=build /app/target/shrikantmutyala-0.0.1-SNAPSHOT.jar shrikantmutyala.jar
 
+# Make sure Render uses the PORT env var
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/shrikantmutyala.jar"]
+ENV PORT=8080
+
+# Entrypoint to launch your Spring Boot app
+ENTRYPOINT ["java", "-jar", "shrikantmutyala.jar"]
