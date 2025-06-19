@@ -1,5 +1,5 @@
 # Build stage
-FROM maven:3.8.6-jdk-17 AS builder
+FROM maven:3.8.6-openjdk-17 AS builder
 WORKDIR /app
 COPY pom.xml mvnw ./
 RUN ./mvnw dependency:go-offline -B
